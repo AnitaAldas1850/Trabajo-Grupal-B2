@@ -1,0 +1,202 @@
+---
+title: "INFORME TÉCNICO: SIMULACIÓN DE RIESGOS"
+subtitle: "Análisis Actuarial de Prima Pura y Comercial"
+author: "Elaborado por: Aldás A., Iniquinga M., Torres E."
+date: "`r format(Sys.Date(), '%d de %B de %2026')`"
+output: 
+  html_document:
+    theme: flatly
+    highlight: pygments
+    toc: true
+    toc_float: true
+    css: !expr "''" # Aquí podrías poner un archivo CSS externo, pero usaremos bloques de estilo abajo
+params:
+  resultados: NA
+  input: NA
+---
+
+<style>
+/* Estilos personalizados para un look profesional */
+body {
+    font-family: 'Inter', sans-serif;
+    color: #2c3e50;
+    line-height: 1.6;
+}
+
+h1.title {
+    color: white;
+    background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+    padding: 30px;
+    border-radius: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+h2 {
+    color: #1e3c72;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    margin-top: 40px;
+}
+
+.summary-box {
+    background-color: #f8f9fa;
+    border-left: 5px solid #1e3c72;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 5px;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(scales)
+library(dplyr)
+library(knitr)
+library(kableExtra) # Necesaria para las tablas bonitas
+
+res <- params$resultados
+inp <- params$input
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(scales)
+library(dplyr)
+
+res <- params$resultados
+inp <- params$input
+```
+
+# Introducción
+
+Este informe presenta los resultados obtenidos mediante el Modelo de Riesgo Agregado, utilizando técnicas de simulación de Monte Carlo. El objetivo es determinar la suficiencia de prima y el perfil de riesgo para la cartera de seguros analizada.
+
+# Configuración del Modelo
+
+Se ha configurado la simulación basada en las selecciones del usuario en el aplicativo, detalladas a continuación:
+
+## Parámetros Generales
+
+-   **Número de simulaciones:** `r format(inp$n_sim, big.mark=",")` iteraciones.
+
+-   **Periodo de Cobertura:** `r inp$periodo` años.
+
+## Modelo de Frecuencia ($N$)
+
+Se ha seleccionado el modelo de frecuencia `r inp$dist_frec`, con los siguientes parámetros:
+
+```{r}
+# Lógica corregida para parámetros de frecuencia en reporte.Rmd
+if(inp$dist_frec == "Poisson") {
+  cat("* Parámetro Lambda (λ):", inp$lambda)
+} else if(inp$dist_frec == "Binomial") {
+  cat("* Ensayos (n):", inp$n_trials, "\n* Probabilidad (p):", inp$p_success)
+} else if(inp$dist_frec == "Binomial Negativa") {
+  cat("* Éxitos (r):", inp$r_param, "\n* Probabilidad (p):", inp$p_nbinom)
+}
+```
+
+## Modelo de Severidad ($X$)
+
+Se ha seleccionado el modelo de severidad `r inp$dist_sev`, con los siguientes parámetros:
+
+-   **Deducible aplicado:** `r dollar(inp$deducible)`
+-   **Límite Máximo:** `r dollar(inp$limite_max)`
+
+# Resultados de la Simulación
+
+## Resumen de Primas
+
+A continuación, se presenta el desglose técnico de los valores obtenidos. Esta tabla constituye la base para la toma de decisiones comerciales.
+
+```{r}
+p_comercial <- res$prima_pura * (1 + inp$margen/100) * (1 + inp$impuestos/100)
+utilidad <- res$prima_pura * (inp$margen/100)
+impuestos_val <- (res$prima_pura * (1 + inp$margen/100)) * (inp$impuestos/100)
+
+tabla_data <- data.frame(
+  Concepto = c(
+    "Siniestralidad Media (E[N])",
+    "Severidad Media Neta (E[X])",
+    "Prima Pura (E[S])",
+    "Recargo por Utilidad",
+    "Carga Impositiva",
+    "PRIMA COMERCIAL TOTAL"
+  ),
+  Valor = c(
+    round(res$E_N, 2),
+    dollar(res$E_X),
+    dollar(res$prima_pura),
+    dollar(utilidad),
+    dollar(impuestos_val),
+    dollar(p_comercial)
+  ),
+  Interpretacion = c(
+    "Frecuencia esperada de eventos",
+    "Costo promedio por reclamo",
+    "Fondo mínimo de cobertura",
+    "Margen de beneficio esperado",
+    "Contribución fiscal",
+    "Precio final de mercado"
+  )
+)
+
+kable(tabla_data, align = "lll") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  row_spec(0, bold = TRUE, background = "#1e3c72", color = "white") %>%
+  row_spec(6, bold = TRUE, background = "#27ae60", color = "white") %>%
+  column_spec(1, bold = TRUE)
+```
+
+Nota: La Prima Comercial incluye un margen de utilidad del `r inp$margen` % y una tasa impositiva del `r inp$impuestos` %.
+
+# Análisis de Riesgo y Solvencia
+
+## Distribución de la Pérdida Agregada ($S$)
+
+El siguiente gráfico muestra la distribución de la pérdida total. La línea roja discontinua representa el VaR (Value at Risk) al 95%, situándose en `r dollar(res$var_95)`.
+
+```{r}
+ggplot(data.frame(S = res$S), aes(x = S)) +
+  geom_histogram(aes(y = ..density..), fill = "#34495e", color = "white", bins = 50, alpha = 0.8) +
+  geom_density(color = "#1e3c72", size = 1) +
+  geom_vline(xintercept = res$var_95, color = "#e74c3c", linetype = "dashed", size = 1.2) +
+  annotate("text", x = res$var_95, y = 0, label = "VaR 95%", vjust = -1, color = "#e74c3c", fontface = "bold") +
+  theme_minimal() + 
+  labs(x = "Pérdida Agregada ($)", y = "Densidad de Probabilidad") +
+  scale_x_continuous(labels = dollar)
+```
+
+## Estadísticas de Extremo
+
+-   **Pérdida Máxima Observada:** `r dollar(max(res$S))`
+
+-   **Pérdida Promedio en Escenarios Críticos (TVaR (95%)):** `r dollar(res$tvar_95)`
+
+-   **Desviación Estándar de S:** `r dollar(sd(res$S))`
+
+- **Rango de Confianza (95%):** [`r dollar(res$ci_low)`, `r dollar(res$ci_high)`]
+
+El TVaR nos indica que, en el peor 5% de los casos, la pérdida promedio esperada sería de `r dollar(res$tvar_95)`, lo cual es vital para la gestión de reaseguro.
+
+# Análisis de Sensibilidad
+
+Se evaluó cómo varía la Prima Pura ante cambios en el deducible contratado:
+
+```{r}
+ded_seq <- seq(0, max(res$costos_raw, 1000), length.out = 15)
+primas <- sapply(ded_seq, function(d) {
+  mean(res$frecuencia) * mean(pmin(pmax(res$costos_raw - d, 0), inp$limite_max))
+})
+ggplot(data.frame(d = ded_seq, p = primas), aes(d, p)) + 
+  geom_line(color = "#e67e22", size = 1) + 
+  geom_point() +
+  labs(title = "Impacto del Deducible en la Prima Pura", x="Deducible ($)", y="Prima ($)") + 
+  theme_minimal() + 
+  scale_y_continuous(labels = dollar)
+```
+
+# Conclusión
+
+Basado en las `r format(inp$n_sim, big.mark=",")` simulaciones, se recomienda una prima comercial de `r dollar(res$prima_pura * (1 + inp$margen/100) * (1 + inp$impuestos/100))` para cubrir los costos esperados y los gastos administrativos, manteniendo un nivel de confianza del 95% frente a desviaciones adversas.
