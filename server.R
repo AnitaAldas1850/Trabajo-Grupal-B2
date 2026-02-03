@@ -2,8 +2,10 @@ library(shiny)
 library(tidyverse)
 library(ggplot2)
 library(scales)
-library(rmarkdown) # ¡Añade esta!
-library(shinyWidgets) #
+library(rmarkdown) 
+library(shinyWidgets) 
+library(kableExtra)
+library(knitr)
 
 # Definir Server
 
