@@ -9,7 +9,6 @@ output:
     highlight: pygments
     toc: true
     toc_float: true
-    css: !expr "''" # Aquí podrías poner un archivo CSS externo, pero usaremos bloques de estilo abajo
 params:
   resultados: NA
   input: NA
