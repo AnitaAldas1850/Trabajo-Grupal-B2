@@ -38,9 +38,7 @@ ui <- fluidPage(
       
       menuItem("Resultados", tabName = "resultados", icon = icon("chart-bar")),
       
-      menuItem("Análisis Sensibilidad", tabName = "sensibilidad", icon = icon("search-dollar")),
-      
-      menuItem("Detalles Técnicos", tabName = "teoria", icon = icon("book"))
+      menuItem("Análisis Sensibilidad", tabName = "sensibilidad", icon = icon("search-dollar"))
       
     ),
     
@@ -265,39 +263,13 @@ ui <- fluidPage(
                     helpText("¿Cómo encarece la prima el ofrecer coberturas más altas?"))
               )
               
-      ),
-      
-      
-      
-      # TAB 4: TEORÍA
-      
-      tabItem(tabName = "teoria",
-              
-              box(title = "Modelo Colectivo de Riesgo", width = 12,
-                  
-                  withMathJax(),
-                  
-                  p("La pérdida agregada se modela mediante la suma aleatoria:"),
-                  
-                  helpText("$$S = \\sum_{i=1}^{N} X_i$$"),
-                  
-                  p("Donde cada siniestro individual $X_i$ se ajusta por el deducible $(d)$ y el límite $(L)$:"),
-                  
-                  helpText("$$X_{adj} = \\min(\\max(X - d, 0), L)$$"),
-                  
-                  hr(),
-                  
-                  h4("Cálculo de Primas"),
-                  
-                  helpText("$$\\Pi_{comercial} = E[S] \\times (1 + m) \\times (1 + t)$$")
-                  
-              )
-              
       )
+      
+      
+      
       
     )
     
   )
   
 )
-
