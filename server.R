@@ -348,27 +348,35 @@ server <- function(input, output, session) {
   
   output$reporte <- downloadHandler(
     filename = function() {
-      paste("Informe_Simulacion_", Sys.Date(), ".html", sep = "")
+      paste0("Informe_Simulacion_", Sys.Date(), ".html")
     },
     content = function(file) {
-      # Mostrar una notificación de que se está generando
-      showNotification("Generando informe detallado...", type = "message")
+      # 1. Mostrar notificación al usuario
+      showNotification("Generando informe... esto puede tardar unos segundos.", type = "message")
       
-      # Copiar el reporte a un lugar temporal
-      tempReport <- file.path(tempdir(), "reporte.Rmd")
-      file.copy("reporte.Rmd", tempReport, overwrite = TRUE)
+      # 2. Crear una ruta temporal segura
+      temp_dir <- tempdir()
+      temp_report <- file.path(temp_dir, "reporte.Rmd")
       
-      # Preparar los parámetros para pasar al Rmd
-      params <- list(
-        resultados = resultados(),
-        input = input
-      )
+      # 3. Copiar el archivo Rmd a la carpeta temporal
+      # Importante: Asegúrate que el archivo se llame reporte.Rmd (todo en minúsculas)
+      file.copy("reporte.Rmd", temp_report, overwrite = TRUE)
       
-      # Renderizar el archivo HTML
-      rmarkdown::render(tempReport, output_file = file,
-                        params = params,
-                        envir = new.env(parent = globalenv())
-      )
+      # 4. Renderizar usando un entorno aislado
+      tryCatch({
+        rmarkdown::render(
+          input = temp_report,
+          output_file = file, # Shiny maneja el destino final aquí
+          params = list(
+            resultados = resultados(),
+            input = input
+          ),
+          # Esto es vital en la nube para evitar conflictos de variables
+          envir = new.env(parent = globalenv())
+        )
+      }, error = function(e) {
+        showNotification(paste("Error al generar el reporte:", e$message), type = "error")
+      })
     }
   )
   
