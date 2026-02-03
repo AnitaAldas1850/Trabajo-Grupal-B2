@@ -12,13 +12,10 @@ library(shinyWidgets)
 
 
 
-# Definir UI
 
 ui <- fluidPage(
   
   
-  
-  # --- Encabezado de Títulos ---
   
   div(class = "main-title", "Sistema de Cálculo de Prima de Seguros"),
   
@@ -64,7 +61,6 @@ ui <- fluidPage(
   
   dashboardBody(
     
-    # --- Estilo CSS Personalizado ---
     
     tags$head(
       
@@ -140,7 +136,6 @@ ui <- fluidPage(
     
     tabItems(
       
-      # TAB 1: CONFIGURACIÓN
       
       tabItem(tabName = "config",
               
@@ -200,7 +195,6 @@ ui <- fluidPage(
       
       
       
-      # TAB 2: RESULTADOS
       
       tabItem(tabName = "resultados",
               
@@ -238,12 +232,10 @@ ui <- fluidPage(
       
       
       
-      # TAB 3: SENSIBILIDAD
       
       tabItem(tabName = "sensibilidad",
               
               fluidRow(
-                # Fila 1: Parámetros Comerciales
                 box(title = "Análisis: Margen vs Prima", width = 6, status = "warning",
                     plotOutput("sensibilidad_margen", height = "300px"),
                     helpText("Muestra cómo sube el precio final según la ganancia deseada.")),
@@ -253,7 +245,6 @@ ui <- fluidPage(
                     helpText("Impacto de la carga fiscal en el costo al cliente."))
               ),
               fluidRow(
-                # Fila 2: Parámetros de Riesgo
                 box(title = "Sensibilidad al Deducible", width = 6, status = "danger",
                     plotOutput("sensibilidad_deducible", height = "300px"),
                     helpText("¿Cuánto ahorra la aseguradora si el cliente asume más deducible?")),
@@ -273,3 +264,4 @@ ui <- fluidPage(
   )
   
 )
+
